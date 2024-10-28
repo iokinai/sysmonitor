@@ -22,7 +22,7 @@ add_library(sysmonitor SHARED STATIC
 )
 
 add_executable(sysmonitor-test
-    test/main.cpp
+    test/cli_cpu.cpp
 )
 
 target_include_directories(sysmonitor PUBLIC ${CMAKE_SOURCE_DIR}/include)

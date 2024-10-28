@@ -54,9 +54,8 @@ public:
   IEnumWbemClassObject *query( const BSTR strQueryLanguage, const BSTR strQuery,
                                long lFlags, IWbemContext *pCtx );
 
-  template <class T>
-  inline decltype( auto ) get_single_result( IEnumWbemClassObject *pEnumerator,
-                                             BSTR field ) {
+  inline IWbemClassObject *
+  get_single_result( IEnumWbemClassObject *pEnumerator ) {
     IWbemClassObject *pClsObj = nullptr;
     ULONG uReturn             = 0;
 
@@ -65,12 +64,15 @@ public:
     if ( 0 == uReturn )
       throw std::runtime_error( "no data available" );
 
+    return pClsObj;
+  }
+
+  template <class T>
+  inline decltype( auto ) get_field( IWbemClassObject *pClsObj, BSTR field ) {
     VARIANT vtProp;
     hr       = pClsObj->Get( field, 0, &vtProp, 0, 0 );
     T result = parse_t_result<T>( vtProp );
     VariantClear( &vtProp );
-
-    pClsObj->Release();
 
     return result;
   }

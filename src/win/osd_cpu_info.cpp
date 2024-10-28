@@ -1,3 +1,4 @@
+#include "cpu_info.hpp"
 #include "win_wmi.hpp"
 #include <Windows.h>
 #include <combaseapi.h>
@@ -6,7 +7,6 @@
 #include <functional>
 #include <memory>
 #include <osd_cpu_info.hpp>
-#include <stdexcept>
 #include <unordered_map>
 #include <wbemcli.h>
 #include <winnt.h>
@@ -24,7 +24,7 @@ static auto wmi = std::make_shared<__windows__details__::wmi>();
 namespace __wmi__default__init__data__ {
 
 struct __wmi__default__init__ {
-  _bstr_t lang, fquery, bsfield;
+  _bstr_t lang, fquery;
   long flags;
 };
 
@@ -55,110 +55,182 @@ wstring_to_string( const std::wstring &wstr ) noexcept {
 
 template <class TR, class TI> using I_to_R_parser = std::function<TR( TI )>;
 
-template <class TI>
-static inline TI wmi_send_query( BSTR lang, BSTR query, BSTR field,
-                                 long flags ) {
-  IEnumWbemClassObject *enumerator = dwmi->query( lang, query, flags, nullptr );
-
-  return dwmi->get_single_result<TI>( enumerator, field );
+static inline IWbemClassObject *wmi_send_query( BSTR lang, BSTR query,
+                                                long flags ) {
+  auto q = dwmi->query( lang, query, flags, nullptr );
+  return dwmi->get_single_result( q );
 }
 
-static inline wmi_init default_init_data( BSTR table, BSTR field ) noexcept {
+template <class TI>
+static inline TI wmi_get_result( IWbemClassObject *obj, BSTR field ) {
+  TI result = dwmi->get_field<TI>( obj, field );
+  return result;
+}
+
+static inline wmi_init default_init_data( BSTR table ) noexcept {
   _bstr_t btable( table );
   _bstr_t query( "SELECT * FROM " );
-  _bstr_t bsfield( field );
   _bstr_t fquery = query + btable;
 
   _bstr_t lang( "WQL" );
   long flags = WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY;
 
-  return { lang, fquery, bsfield, flags };
+  return { lang, fquery, flags };
 }
 
 template <class TR, class TI>
-static TR wmi_query( BSTR lang, BSTR query, BSTR field, long flags,
-                     I_to_R_parser<TR, TI> parser ) {
-  return parser( wmi_send_query<TI>( lang, query, field, flags ) );
+static TR wmi_return_result( IWbemClassObject *em, BSTR field,
+                             I_to_R_parser<TR, TI> parser ) {
+  return parser( wmi_get_result<TI>( em, field ) );
 }
 
 template <class TR>
-static TR wmi_query( BSTR lang, BSTR query, BSTR field, long flags ) {
-  return wmi_send_query<TR>( lang, query, field, flags );
+static TR wmi_return_result( IWbemClassObject *em, BSTR field ) {
+  return wmi_get_result<TR>( em, field );
 }
 
-template <class TR, class TI>
-static TR wmi_default_query( BSTR table, BSTR field,
-                             I_to_R_parser<TR, TI> parser ) {
-  auto data = default_init_data( table, field );
-  return wmi_query<TR, TI>( data.lang, data.fquery, data.bsfield, data.flags,
-                            parser );
-}
-
-template <class TR> static TR wmi_default_query( BSTR table, BSTR field ) {
-  auto data = default_init_data( table, field );
-  return wmi_query<TR>( data.lang, data.fquery, data.bsfield, data.flags );
+static IWbemClassObject *wmi_default_query( BSTR table ) {
+  auto data = default_init_data( table );
+  return wmi_send_query( data.lang, data.fquery, data.flags );
 }
 
 static inline const std::unordered_map<int, std::string> arc_map = {
-    { 0, "x86" },
-    { 6, "x64" },
-    { 9, "ARM" },
-    { 12, "ARM64" },
-    { 0xffff, "UNKNOWN" } };
+    { 0, "x86" },     { 1, "MIPS" },   { 2, "Alpha" },
+    { 3, "PowerPC" }, { 5, "ARM" },    { 6, "ia64" },
+    { 9, "x64" },     { 12, "ARM64" }, { 0xffff, "UNKNOWN" } };
 
 std::string load_cpu_arch() {
   _bstr_t table( "Win32_Processor" );
   _bstr_t field( "Architecture" );
 
-  return arc_map.at( wmi_default_query<uint32_t>( table, field ) );
+  auto en      = wmi_default_query( table );
+  uint32_t rel = wmi_return_result<uint32_t>( en, field );
+  en->Release();
+
+  return arc_map.at( rel );
 }
 
 std::string load_cpu_name() {
   _bstr_t table( "Win32_Processor" );
   _bstr_t field( "Name" );
 
-  return wmi_default_query<std::string, BSTR>( table, field,
-                                               wstring_to_string );
+  auto en = wmi_default_query( table );
+  std::string rel =
+      wmi_return_result<std::string, BSTR>( en, field, wstring_to_string );
+  en->Release();
+
+  return rel;
 }
 
 std::string load_cpu_description() {
   _bstr_t table( "Win32_Processor" );
   _bstr_t field( "Description" );
 
-  return wmi_default_query<std::string, BSTR>( table, field,
-                                               wstring_to_string );
+  auto en = wmi_default_query( table );
+  std::string rel =
+      wmi_return_result<std::string, BSTR>( en, field, wstring_to_string );
+  en->Release();
+
+  return rel;
 }
 
 uint32_t load_cpu_l2_size() {
   _bstr_t table( "Win32_Processor" );
   _bstr_t field( "L2CacheSize" );
 
-  return wmi_default_query<uint32_t>( table, field );
+  auto en      = wmi_default_query( table );
+  uint32_t rel = wmi_return_result<uint32_t>( en, field );
+  en->Release();
+
+  return rel;
 }
 
 uint32_t load_cpu_l3_size() {
   _bstr_t table( "Win32_Processor" );
   _bstr_t field( "L3CacheSize" );
 
-  return wmi_default_query<uint32_t>( table, field );
+  auto en      = wmi_default_query( table );
+  uint32_t rel = wmi_return_result<uint32_t>( en, field );
+  en->Release();
+
+  return rel;
 }
 
 uint32_t load_cpu_max_speed() {
   _bstr_t table( "Win32_Processor" );
   _bstr_t field( "MaxClockSpeed" );
 
-  return wmi_default_query<uint32_t>( table, field );
+  auto en      = wmi_default_query( table );
+  uint32_t rel = wmi_return_result<uint32_t>( en, field );
+  en->Release();
+
+  return rel;
 }
 
 uint16_t load_cpu_load_percentage() {
   _bstr_t table( "Win32_Processor" );
   _bstr_t field( "LoadPercentage" );
 
-  return wmi_default_query<uint32_t>( table, field );
+  auto en      = wmi_default_query( table );
+  uint32_t rel = wmi_return_result<uint32_t>( en, field );
+  en->Release();
+
+  return rel;
+}
+
+uint32_t load_cpu_load_cores() {
+  _bstr_t table( "Win32_Processor" );
+  _bstr_t field( "NumberOfCores" );
+
+  auto en      = wmi_default_query( table );
+  uint32_t rel = wmi_return_result<uint32_t>( en, field );
+  en->Release();
+
+  return rel;
+}
+
+uint32_t load_cpu_load_threads() {
+  _bstr_t table( "Win32_Processor" );
+  _bstr_t field( "ThreadCount" );
+
+  auto en      = wmi_default_query( table );
+  uint32_t rel = wmi_return_result<uint32_t>( en, field );
+  en->Release();
+
+  return rel;
 }
 
 cpu_info load_cpu_info() {
-  //
+  cpu_info info;
+
+  _bstr_t table( "Win32_Processor" );
+  _bstr_t arch_field( "Architecture" );
+  _bstr_t name_field( "Name" );
+  _bstr_t descr_field( "Description" );
+  _bstr_t l2size_field( "L2CacheSize" );
+  _bstr_t l3size_field( "L3CacheSize" );
+  _bstr_t load_perc_field( "LoadPercentage" );
+  _bstr_t max_speed_field( "MaxClockSpeed" );
+  _bstr_t number_of_cores( "NumberOfCores" );
+  _bstr_t thread_count( "ThreadCount" );
+
+  auto res = wmi_default_query( table );
+
+  info.arch     = arc_map.at( wmi_return_result<uint32_t>( res, arch_field ) );
+  info.cpu_name = wmi_return_result<std::string, BSTR>( res, name_field,
+                                                        wstring_to_string );
+  info.description     = wmi_return_result<std::string, BSTR>( res, descr_field,
+                                                               wstring_to_string );
+  info.l2_size         = wmi_return_result<uint32_t>( res, l2size_field );
+  info.l3_size         = wmi_return_result<uint32_t>( res, l3size_field );
+  info.load_percentage = wmi_return_result<uint32_t>( res, load_perc_field );
+  info.max_speed       = wmi_return_result<uint32_t>( res, max_speed_field );
+  info.cores           = wmi_return_result<uint32_t>( res, number_of_cores );
+  info.threads         = wmi_return_result<uint32_t>( res, thread_count );
+
+  res->Release();
+
+  return info;
 }
 
 /*

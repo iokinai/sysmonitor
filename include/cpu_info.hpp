@@ -13,6 +13,9 @@ struct cpu_info {
   uint32_t l3_size;
   uint32_t max_speed;
   uint16_t load_percentage;
+  std::string description;
+  uint32_t cores;
+  uint32_t threads;
 };
 
 } // namespace sysmonitor

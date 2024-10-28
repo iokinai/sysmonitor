@@ -14,6 +14,8 @@ uint32_t load_cpu_l2_size();
 uint32_t load_cpu_l3_size();
 uint32_t load_cpu_max_speed();
 uint16_t load_cpu_load_percentage();
+uint32_t load_cpu_load_cores();
+uint32_t load_cpu_load_threads();
 
 cpu_info load_cpu_info();
 
