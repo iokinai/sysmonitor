@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 
 set(WINDOWS_IMPLEMENTATION 
-    src/win/osd_cpu_info.cpp
+    src/win/osd_system_info.cpp
     src/win/win_wmi_parser.cpp
     src/win/win_wmi.cpp
 )
@@ -21,10 +21,15 @@ add_library(sysmonitor SHARED STATIC
     ${OS_OMPL_HEADERS}
 )
 
-add_executable(sysmonitor-test
+add_executable(sysmonitor-cpu-test
     test/cli_cpu.cpp
+)
+
+add_executable(sysmonitor-gpu-test
+    test/cli_gpu.cpp
 )
 
 target_include_directories(sysmonitor PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(sysmonitor PUBLIC ole32 oleaut32 wbemuuid)
-target_link_libraries(sysmonitor-test PUBLIC sysmonitor)
+target_link_libraries(sysmonitor-cpu-test PUBLIC sysmonitor)
+target_link_libraries(sysmonitor-gpu-test PUBLIC sysmonitor)

@@ -16,6 +16,7 @@ struct cpu_info {
   std::string description;
   uint32_t cores;
   uint32_t threads;
+  std::string socket;
 };
 
 } // namespace sysmonitor

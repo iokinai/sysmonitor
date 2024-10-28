@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <osd_cpu_info.hpp>
+#include <osd_system_info.hpp>
 #include <unordered_map>
 #include <wbemcli.h>
 #include <winnt.h>
@@ -94,10 +94,18 @@ static IWbemClassObject *wmi_default_query( BSTR table ) {
   return wmi_send_query( data.lang, data.fquery, data.flags );
 }
 
-static inline const std::unordered_map<int, std::string> arc_map = {
+static inline const std::unordered_map<uint32_t, std::string> arc_map = {
     { 0, "x86" },     { 1, "MIPS" },   { 2, "Alpha" },
     { 3, "PowerPC" }, { 5, "ARM" },    { 6, "ia64" },
     { 9, "x64" },     { 12, "ARM64" }, { 0xffff, "UNKNOWN" } };
+
+static inline const std::unordered_map<uint32_t, std::string> vram_type_map = {
+    { 2, "DRAM" }, { 3, "VRAM" }, { 4, "SDRAM" }, { 5, "SGRAM" } };
+
+static inline const std::unordered_map<uint32_t, std::string> video_arc_map {
+    { 1, "Other" }, { 2, "Unknown" }, { 5, "VGA" },
+    { 6, "XGA" },   { 7, "SGVA" },    { 8, "MDA" },
+};
 
 std::string load_cpu_arch() {
   _bstr_t table( "Win32_Processor" );
@@ -178,7 +186,7 @@ uint16_t load_cpu_load_percentage() {
   return rel;
 }
 
-uint32_t load_cpu_load_cores() {
+uint32_t load_cpu_cores() {
   _bstr_t table( "Win32_Processor" );
   _bstr_t field( "NumberOfCores" );
 
@@ -189,12 +197,24 @@ uint32_t load_cpu_load_cores() {
   return rel;
 }
 
-uint32_t load_cpu_load_threads() {
+uint32_t load_cpu_threads() {
   _bstr_t table( "Win32_Processor" );
   _bstr_t field( "ThreadCount" );
 
   auto en      = wmi_default_query( table );
   uint32_t rel = wmi_return_result<uint32_t>( en, field );
+  en->Release();
+
+  return rel;
+}
+
+std::string load_cpu_socket() {
+  _bstr_t table( "Win32_Processor" );
+  _bstr_t field( "SocketDesignation" );
+
+  auto en = wmi_default_query( table );
+  std::string rel =
+      wmi_return_result<std::string, BSTR>( en, field, wstring_to_string );
   en->Release();
 
   return rel;
@@ -213,6 +233,7 @@ cpu_info load_cpu_info() {
   _bstr_t max_speed_field( "MaxClockSpeed" );
   _bstr_t number_of_cores( "NumberOfCores" );
   _bstr_t thread_count( "ThreadCount" );
+  _bstr_t field( "SocketDesignation" );
 
   auto res = wmi_default_query( table );
 
@@ -227,8 +248,52 @@ cpu_info load_cpu_info() {
   info.max_speed       = wmi_return_result<uint32_t>( res, max_speed_field );
   info.cores           = wmi_return_result<uint32_t>( res, number_of_cores );
   info.threads         = wmi_return_result<uint32_t>( res, thread_count );
+  info.socket =
+      wmi_return_result<std::string, BSTR>( res, field, wstring_to_string );
 
   res->Release();
+
+  return info;
+}
+
+struct gpu_info_ {
+  std::string name;
+  uint32_t vram;
+  std::string description;
+  std::string driver_version;
+  std::string system_name;
+  uint32_t video_arch;
+  uint32_t vram_type;
+  std::string gpu;
+};
+
+gpu_info load_gpu_info() {
+  gpu_info info;
+
+  _bstr_t table( "Win32_VideoController" );
+  _bstr_t name_field( "Name" );
+  _bstr_t vram_field( "AdapterRAM" );
+  _bstr_t description_field( "Description" );
+  _bstr_t driver_ver_field( "DriverVersion" );
+  _bstr_t system_name_field( "SystemName" );
+  _bstr_t video_arch_field( "VideoArchitecture" );
+  _bstr_t vram_type_field( "VideoMemoryType" );
+  _bstr_t gpu_field( "VideoProcessor" );
+
+  auto res = wmi_default_query( table );
+
+  info.name        = wmi_return_result<std::string, BSTR>( res, name_field,
+                                                           wstring_to_string );
+  info.description = wmi_return_result<std::string, BSTR>(
+      res, description_field, wstring_to_string );
+
+  info.driver_version = wmi_return_result<std::string, BSTR>(
+      res, driver_ver_field, wstring_to_string );
+
+  info.video_arch =
+      video_arc_map.at( wmi_return_result<uint32_t>( res, video_arch_field ) );
+  info.vram_type =
+      vram_type_map.at( wmi_return_result<uint32_t>( res, vram_type_field ) );
 
   return info;
 }

@@ -49,6 +49,7 @@ inline std::string bytes_converter( uint32_t base_value,
                                     uint8_t accuracy ) noexcept {
 
   std::vector<std::pair<uint32_t, std::string>> units = {
+      { 1000000, "G" },
       { 1000, "M" },
       { 100, "K" },
   };

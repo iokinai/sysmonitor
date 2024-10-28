@@ -5,7 +5,7 @@
 #include <Windows.h>
 #include <combaseapi.h>
 #include <comdef.h>
-#include <osd_cpu_info.hpp>
+#include <osd_system_info.hpp>
 #include <stdexcept>
 #include <wbemcli.h>
 #include <winnt.h>

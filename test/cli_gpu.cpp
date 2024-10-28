@@ -1,3 +1,4 @@
+#include "gpu_info.hpp"
 #include "osd_system_info.hpp"
 #include <converters.hpp>
 #include <cpu_info.hpp>
@@ -13,20 +14,12 @@ const uint8_t tabs_per_tabul = 8;
 
 std::vector<std::pair<std::string, std::string>> params;
 
-void init_( const sysmonitor::cpu_info &info ) noexcept {
-  params.push_back( { "Name", info.cpu_name } );
-  params.push_back( { "Arch", info.arch } );
-  params.push_back(
-      { "L2 Cache Size", sysmonitor::bytes_converter( info.l2_size, 2 ) } );
-  params.push_back(
-      { "L3 Cache Size", sysmonitor::bytes_converter( info.l3_size, 2 ) } );
-  params.push_back( { "Load Percentage",
-                      sysmonitor::percent_converter( info.load_percentage ) } );
-  params.push_back(
-      { "Max Speed", sysmonitor::hertz_converter( info.max_speed, 2 ) } );
-  params.push_back( { "Cores", std::to_string( info.cores ) } );
-  params.push_back( { "Threads", std::to_string( info.threads ) } );
-  params.push_back( { "Socket", info.socket } );
+void init_( const sysmonitor::gpu_info &info ) noexcept {
+  params.push_back( { "Name", info.name } );
+  params.push_back( { "Arch", info.video_arch } );
+  params.push_back( { "Description", info.description } );
+  params.push_back( { "Driver Version", info.driver_version } );
+  params.push_back( { "VRAM Type", info.vram_type } );
 }
 
 void print() noexcept {
@@ -46,7 +39,7 @@ void print() noexcept {
 
   std::cout << "|" << std::string( totalWidth - 2, ' ' ) << "|\n";
 
-  std::string title   = "CPU INFO";
+  std::string title   = "GPU INFO";
   size_t titlePadding = ( totalWidth - 2 - title.size() ) / 2;
   std::cout << "|" << std::string( titlePadding, ' ' ) << title
             << std::string( totalWidth - 2 - titlePadding - title.size(), ' ' )
@@ -74,7 +67,7 @@ void print() noexcept {
 int main() {
   system( "cls" );
 
-  sysmonitor::cpu_info info = sysmonitor::load_cpu_info();
+  sysmonitor::gpu_info info = sysmonitor::load_gpu_info();
 
   init_( info );
 
