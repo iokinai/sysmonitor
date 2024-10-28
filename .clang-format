@@ -1,0 +1,35 @@
+
+BasedOnStyle: LLVM
+Language: Cpp
+AllowShortFunctionsOnASingleLine: Empty
+AlignConsecutiveAssignments:
+    Enabled: true
+    AcrossEmptyLines: false
+    AcrossComments: false
+AlignConsecutiveMacros: true
+AllowAllParametersOfDeclarationOnNextLine: true
+BreakAfterAttributes: Always
+SpaceAfterCStyleCast: true
+SpaceAfterTemplateKeyword: true
+SpaceBeforeCaseColon: true
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeCtorInitializerColon: true
+SpaceBeforeInheritanceColon: true
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+    AfterControlStatements: true
+    AfterFunctionDeclarationName: false
+    AfterOverloadedOperator: true
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceInEmptyBlock: true
+SpacesInAngles: false
+SpacesInContainerLiterals: true
+SpacesInParens: Custom
+SpacesInParensOptions:
+    InConditionalStatements: true
+    InCStyleCasts: false
+    InEmptyParentheses: false
+    Other: true
+SpacesInSquareBrackets: false
+Standard: Latest
+TabWidth: 4
