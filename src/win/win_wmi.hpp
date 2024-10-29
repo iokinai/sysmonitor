@@ -6,7 +6,6 @@
 #include <combaseapi.h>
 #include <comdef.h>
 #include <osd_system_info.hpp>
-#include <stdexcept>
 #include <wbemcli.h>
 #include <winnt.h>
 
@@ -60,9 +59,6 @@ public:
     ULONG uReturn             = 0;
 
     hr = pEnumerator->Next( WBEM_INFINITE, 1, &pClsObj, &uReturn );
-
-    if ( 0 == uReturn )
-      throw std::runtime_error( "no data available" );
 
     return pClsObj;
   }

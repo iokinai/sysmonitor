@@ -4,7 +4,9 @@
 #include <cpu_info.hpp>
 #include <cstdint>
 #include <gpu_info.hpp>
+#include <ram_stick_info.hpp>
 #include <string>
+#include <vector>
 
 namespace sysmonitor {
 
@@ -21,6 +23,7 @@ std::string load_cpu_socket();
 
 cpu_info load_cpu_info();
 gpu_info load_gpu_info();
+std::vector<ram_stick_info> load_ram_info();
 
 } // namespace sysmonitor
 

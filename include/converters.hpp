@@ -12,7 +12,7 @@
 namespace sysmonitor {
 
 inline std::pair<float, std::string> base_converter(
-    uint32_t base_value, uint8_t accuracy,
+    uint64_t base_value, uint8_t accuracy,
     const std::vector<std::pair<uint32_t, std::string>> &units ) noexcept {
   float factor = std::pow( 10, accuracy );
 
@@ -30,7 +30,7 @@ inline std::pair<float, std::string> base_converter(
 }
 
 inline std::string
-float_converter( uint32_t base_value, uint8_t accuracy,
+float_converter( uint64_t base_value, uint8_t accuracy,
                  const std::vector<std::pair<uint32_t, std::string>> &units ) {
   auto [result, unit] = base_converter( base_value, accuracy, units );
 
@@ -45,13 +45,19 @@ float_converter( uint32_t base_value, uint8_t accuracy,
   return str_result;
 }
 
-inline std::string bytes_converter( uint32_t base_value,
+inline std::string ram_converter_into_gb( const std::string &ram ) {
+  uint64_t v = std::stoull( ram.c_str() );
+
+  return std::to_string( v );
+}
+
+inline std::string bytes_converter( uint64_t base_value,
                                     uint8_t accuracy ) noexcept {
 
   std::vector<std::pair<uint32_t, std::string>> units = {
-      { 1000000, "G" },
-      { 1000, "M" },
-      { 100, "K" },
+      { std::pow( 1024, 3 ), "G" },
+      { 1024, "M" },
+      { 1, "K" },
   };
 
   return float_converter( base_value, accuracy, units );

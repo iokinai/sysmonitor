@@ -11,13 +11,15 @@ set(WINDOWS_IMPLEMENTATION
     src/win/win_wmi.cpp
 )
 
+add_subdirectory(${CMAKE_SOURCE_DIR}/cli)
+
 if (WIN32) 
     set(OS_OMPL_HEADERS ${WINDOWS_IMPLEMENTATION})
 else()
     message(ERROR "Your OS is not supported")
 endif(WIN32)
 
-add_library(sysmonitor SHARED STATIC
+add_library(sysmonitor STATIC
     ${OS_OMPL_HEADERS}
 )
 
@@ -31,5 +33,6 @@ add_executable(sysmonitor-gpu-test
 
 target_include_directories(sysmonitor PUBLIC ${CMAKE_SOURCE_DIR}/include)
 target_link_libraries(sysmonitor PUBLIC ole32 oleaut32 wbemuuid)
-target_link_libraries(sysmonitor-cpu-test PUBLIC sysmonitor)
-target_link_libraries(sysmonitor-gpu-test PUBLIC sysmonitor)
+target_link_libraries(sysmonitor-cpu-test PUBLIC sysmonitor ole32 oleaut32 wbemuuid)
+target_link_libraries(sysmonitor-gpu-test PUBLIC sysmonitor ole32 oleaut32 wbemuuid)
+target_link_libraries(sysmonitor-cli PRIVATE sysmonitor ole32 oleaut32 wbemuuid)

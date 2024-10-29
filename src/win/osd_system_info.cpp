@@ -38,27 +38,28 @@ static inline void rtrim( std::string &s ) {
       s.end() );
 }
 
-static inline std::string
-wstring_to_string( const std::wstring &wstr ) noexcept {
-  if ( wstr.empty() )
-    return std::string();
+static inline std::string wstring_to_string( BSTR bstr ) noexcept {
+  if ( bstr == nullptr ) {
+    return "NULL";
+  }
+
+  std::wstring wstr( bstr );
 
   int size_needed = WideCharToMultiByte(
       CP_UTF8, 0, &wstr[0], (int) wstr.size(), NULL, 0, NULL, NULL );
-  std::string strTo( size_needed, 0 );
-  WideCharToMultiByte( CP_UTF8, 0, wstr.data(), (int) wstr.size(), strTo.data(),
-                       size_needed, nullptr, nullptr );
+  std::string str_to( size_needed, 0 );
+  WideCharToMultiByte( CP_UTF8, 0, wstr.data(), (int) wstr.size(),
+                       str_to.data(), size_needed, nullptr, nullptr );
 
-  rtrim( strTo );
-  return strTo;
+  rtrim( str_to );
+  return str_to;
 }
 
 template <class TR, class TI> using I_to_R_parser = std::function<TR( TI )>;
 
-static inline IWbemClassObject *wmi_send_query( BSTR lang, BSTR query,
-                                                long flags ) {
-  auto q = dwmi->query( lang, query, flags, nullptr );
-  return dwmi->get_single_result( q );
+static inline IEnumWbemClassObject *wmi_send_query( BSTR lang, BSTR query,
+                                                    long flags ) {
+  return dwmi->query( lang, query, flags, nullptr );
 }
 
 template <class TI>
@@ -79,17 +80,30 @@ static inline wmi_init default_init_data( BSTR table ) noexcept {
 }
 
 template <class TR, class TI>
-static TR wmi_return_result( IWbemClassObject *em, BSTR field,
-                             I_to_R_parser<TR, TI> parser ) {
-  return parser( wmi_get_result<TI>( em, field ) );
+static TR wmi_return_current_result( IWbemClassObject *cl, BSTR field,
+                                     I_to_R_parser<TR, TI> parser ) {
+  return parser( wmi_get_result<TI>( cl, field ) );
 }
 
 template <class TR>
-static TR wmi_return_result( IWbemClassObject *em, BSTR field ) {
-  return wmi_get_result<TR>( em, field );
+static TR wmi_return_current_result( IWbemClassObject *cl, BSTR field ) {
+  return wmi_get_result<TR>( cl, field );
 }
 
-static IWbemClassObject *wmi_default_query( BSTR table ) {
+template <class TR, class TI>
+static TR wmi_return_next_result( IEnumWbemClassObject *cl, BSTR field,
+                                  I_to_R_parser<TR, TI> parser ) {
+  auto em = dwmi->get_single_result( cl );
+  return wmi_return_current_result<TR, TI>( em, field, parser );
+}
+
+template <class TR>
+static TR wmi_return_next_result( IEnumWbemClassObject *cl, BSTR field ) {
+  auto em = dwmi->get_single_result( cl );
+  return wmi_return_current_result<TR>( em, field );
+}
+
+static IEnumWbemClassObject *wmi_default_query( BSTR table ) {
   auto data = default_init_data( table );
   return wmi_send_query( data.lang, data.fquery, data.flags );
 }
@@ -107,118 +121,20 @@ static inline const std::unordered_map<uint32_t, std::string> video_arc_map {
     { 6, "XGA" },   { 7, "SGVA" },    { 8, "MDA" },
 };
 
-std::string load_cpu_arch() {
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t field( "Architecture" );
-
-  auto en      = wmi_default_query( table );
-  uint32_t rel = wmi_return_result<uint32_t>( en, field );
-  en->Release();
-
-  return arc_map.at( rel );
-}
-
-std::string load_cpu_name() {
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t field( "Name" );
-
-  auto en = wmi_default_query( table );
-  std::string rel =
-      wmi_return_result<std::string, BSTR>( en, field, wstring_to_string );
-  en->Release();
-
-  return rel;
-}
-
-std::string load_cpu_description() {
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t field( "Description" );
-
-  auto en = wmi_default_query( table );
-  std::string rel =
-      wmi_return_result<std::string, BSTR>( en, field, wstring_to_string );
-  en->Release();
-
-  return rel;
-}
-
-uint32_t load_cpu_l2_size() {
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t field( "L2CacheSize" );
-
-  auto en      = wmi_default_query( table );
-  uint32_t rel = wmi_return_result<uint32_t>( en, field );
-  en->Release();
-
-  return rel;
-}
-
-uint32_t load_cpu_l3_size() {
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t field( "L3CacheSize" );
-
-  auto en      = wmi_default_query( table );
-  uint32_t rel = wmi_return_result<uint32_t>( en, field );
-  en->Release();
-
-  return rel;
-}
-
-uint32_t load_cpu_max_speed() {
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t field( "MaxClockSpeed" );
-
-  auto en      = wmi_default_query( table );
-  uint32_t rel = wmi_return_result<uint32_t>( en, field );
-  en->Release();
-
-  return rel;
-}
-
-uint16_t load_cpu_load_percentage() {
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t field( "LoadPercentage" );
-
-  auto en      = wmi_default_query( table );
-  uint32_t rel = wmi_return_result<uint32_t>( en, field );
-  en->Release();
-
-  return rel;
-}
-
-uint32_t load_cpu_cores() {
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t field( "NumberOfCores" );
-
-  auto en      = wmi_default_query( table );
-  uint32_t rel = wmi_return_result<uint32_t>( en, field );
-  en->Release();
-
-  return rel;
-}
-
-uint32_t load_cpu_threads() {
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t field( "ThreadCount" );
-
-  auto en      = wmi_default_query( table );
-  uint32_t rel = wmi_return_result<uint32_t>( en, field );
-  en->Release();
-
-  return rel;
-}
-
-std::string load_cpu_socket() {
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t field( "SocketDesignation" );
-
-  auto en = wmi_default_query( table );
-  std::string rel =
-      wmi_return_result<std::string, BSTR>( en, field, wstring_to_string );
-  en->Release();
-
-  return rel;
-}
+static const std::unordered_map<uint32_t, std::string> memory_type_map = {
+    { 0, "Unknown" },       { 1, "Other" },
+    { 2, "DRAM" },          { 3, "Synchronous DRAM" },
+    { 4, "Cache DRAM" },    { 5, "EDO" },
+    { 6, "EDRAM" },         { 7, "VRAM" },
+    { 8, "SRAM" },          { 9, "RAM" },
+    { 10, "ROM" },          { 11, "Flash" },
+    { 12, "EEPROM" },       { 13, "FEPROM" },
+    { 14, "EPROM" },        { 15, "CDRAM" },
+    { 16, "3DRAM" },        { 17, "SDRAM" },
+    { 18, "SGRAM" },        { 19, "RDRAM" },
+    { 20, "DDR" },          { 21, "DDR2" },
+    { 22, "DDR2 FB-DIMM" }, { 23, "DDR3" },
+    { 24, "FBD2" },         { 25, "DDR4" } };
 
 cpu_info load_cpu_info() {
   cpu_info info;
@@ -236,66 +152,141 @@ cpu_info load_cpu_info() {
   _bstr_t field( "SocketDesignation" );
 
   auto res = wmi_default_query( table );
+  auto en  = dwmi->get_single_result( res );
 
-  info.arch     = arc_map.at( wmi_return_result<uint32_t>( res, arch_field ) );
-  info.cpu_name = wmi_return_result<std::string, BSTR>( res, name_field,
-                                                        wstring_to_string );
-  info.description     = wmi_return_result<std::string, BSTR>( res, descr_field,
-                                                               wstring_to_string );
-  info.l2_size         = wmi_return_result<uint32_t>( res, l2size_field );
-  info.l3_size         = wmi_return_result<uint32_t>( res, l3size_field );
-  info.load_percentage = wmi_return_result<uint32_t>( res, load_perc_field );
-  info.max_speed       = wmi_return_result<uint32_t>( res, max_speed_field );
-  info.cores           = wmi_return_result<uint32_t>( res, number_of_cores );
-  info.threads         = wmi_return_result<uint32_t>( res, thread_count );
-  info.socket =
-      wmi_return_result<std::string, BSTR>( res, field, wstring_to_string );
+  info.arch =
+      arc_map.at( wmi_return_current_result<uint32_t>( en, arch_field ) );
+  info.cpu_name = wmi_return_current_result<std::string, BSTR>(
+      en, name_field, wstring_to_string );
+  info.description = wmi_return_current_result<std::string, BSTR>(
+      en, descr_field, wstring_to_string );
+  info.l2_size = wmi_return_current_result<uint32_t>( en, l2size_field );
+  info.l3_size = wmi_return_current_result<uint32_t>( en, l3size_field );
+  info.load_percentage =
+      wmi_return_current_result<uint32_t>( en, load_perc_field );
+  info.max_speed = wmi_return_current_result<uint32_t>( en, max_speed_field );
+  info.cores     = wmi_return_current_result<uint32_t>( en, number_of_cores );
+  info.threads   = wmi_return_current_result<uint32_t>( en, thread_count );
+  info.socket    = wmi_return_current_result<std::string, BSTR>(
+      en, field, wstring_to_string );
 
   res->Release();
 
   return info;
 }
 
-struct gpu_info_ {
-  std::string name;
-  uint32_t vram;
-  std::string description;
-  std::string driver_version;
-  std::string system_name;
-  uint32_t video_arch;
-  uint32_t vram_type;
-  std::string gpu;
-};
-
 gpu_info load_gpu_info() {
   gpu_info info;
 
   _bstr_t table( "Win32_VideoController" );
   _bstr_t name_field( "Name" );
-  _bstr_t vram_field( "AdapterRAM" );
   _bstr_t description_field( "Description" );
   _bstr_t driver_ver_field( "DriverVersion" );
-  _bstr_t system_name_field( "SystemName" );
   _bstr_t video_arch_field( "VideoArchitecture" );
   _bstr_t vram_type_field( "VideoMemoryType" );
-  _bstr_t gpu_field( "VideoProcessor" );
 
   auto res = wmi_default_query( table );
+  auto en  = dwmi->get_single_result( res );
 
-  info.name        = wmi_return_result<std::string, BSTR>( res, name_field,
-                                                           wstring_to_string );
-  info.description = wmi_return_result<std::string, BSTR>(
-      res, description_field, wstring_to_string );
+  info.name = wmi_return_current_result<std::string, BSTR>( en, name_field,
+                                                            wstring_to_string );
+  info.description = wmi_return_current_result<std::string, BSTR>(
+      en, description_field, wstring_to_string );
 
-  info.driver_version = wmi_return_result<std::string, BSTR>(
-      res, driver_ver_field, wstring_to_string );
+  info.driver_version = wmi_return_current_result<std::string, BSTR>(
+      en, driver_ver_field, wstring_to_string );
 
-  info.video_arch =
-      video_arc_map.at( wmi_return_result<uint32_t>( res, video_arch_field ) );
-  info.vram_type =
-      vram_type_map.at( wmi_return_result<uint32_t>( res, vram_type_field ) );
+  info.video_arch = video_arc_map.at(
+      wmi_return_current_result<uint32_t>( en, video_arch_field ) );
+  info.vram_type = vram_type_map.at(
+      wmi_return_current_result<uint32_t>( en, vram_type_field ) );
 
   return info;
+}
+
+std::vector<ram_stick_info> load_ram_info() {
+  std::vector<ram_stick_info> info;
+
+  _bstr_t table( "Win32_PhysicalMemory" );
+  _bstr_t name_field( "Name" );
+  _bstr_t model_field( "Model" );
+  _bstr_t version_field( "Version" );
+  _bstr_t capacity_field( "Capacity" );
+  _bstr_t speed_field( "Speed" );
+  _bstr_t description_field( "Description" );
+  _bstr_t memory_type_field( "MemoryType" );
+
+  auto default_data = default_init_data( table );
+  auto res          = wmi_send_query( default_data.lang, default_data.fquery,
+                                      default_data.flags );
+  auto sresult      = dwmi->get_single_result( res );
+
+  while ( sresult ) {
+
+    std::string name = wmi_return_current_result<std::string, BSTR>(
+        sresult, name_field, wstring_to_string );
+    std::string description = wmi_return_current_result<std::string, BSTR>(
+        sresult, description_field, wstring_to_string );
+
+    std::string model = wmi_return_current_result<std::string, BSTR>(
+        sresult, model_field, wstring_to_string );
+
+    std::string version = std::to_string(
+        wmi_return_current_result<uint32_t>( sresult, version_field ) );
+    std::string capacity = wmi_return_current_result<std::string, BSTR>(
+        sresult, capacity_field, wstring_to_string );
+    uint32_t speed =
+        wmi_return_current_result<uint32_t>( sresult, speed_field );
+    uint32_t memory_type =
+        wmi_return_current_result<uint32_t>( sresult, memory_type_field );
+
+    info.emplace_back( name, model, version, capacity, speed, description,
+                       memory_type_map.at( memory_type ) );
+
+    sresult = dwmi->get_single_result( res );
+  }
+
+  return info;
+}
+
+std::string load_cpu_arch() {
+  return load_cpu_info().arch;
+}
+
+std::string load_cpu_name() {
+  return load_cpu_info().cpu_name;
+}
+
+std::string load_cpu_description() {
+  return load_cpu_info().description;
+}
+
+uint32_t load_cpu_l2_size() {
+  return load_cpu_info().l2_size;
+}
+
+uint32_t load_cpu_l3_size() {
+  return load_cpu_info().l3_size;
+}
+
+uint32_t load_cpu_max_speed() {
+  return load_cpu_info().max_speed;
+}
+
+uint16_t load_cpu_load_percentage() {
+  return load_cpu_info().load_percentage;
+}
+
+uint32_t load_cpu_cores() {
+  return load_cpu_info().cores;
+}
+
+uint32_t load_cpu_threads() {
+  return load_cpu_info().threads;
+}
+
+std::string load_cpu_socket() {
+  return load_cpu_info().socket;
 }
 
 /*

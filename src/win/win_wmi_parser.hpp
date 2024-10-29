@@ -11,6 +11,7 @@ template <class T> T parse_t_result( VARIANT vtProp ) = delete;
 
 template <> BSTR parse_t_result<BSTR>( VARIANT vtProp );
 template <> uint32_t parse_t_result<uint32_t>( VARIANT vtProp );
+template <> uint64_t parse_t_result<uint64_t>( VARIANT vtProp );
 
 } // namespace __windows__details__
 
