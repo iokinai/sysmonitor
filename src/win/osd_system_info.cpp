@@ -184,6 +184,9 @@ gpu_info load_gpu_info() {
   _bstr_t driver_ver_field( "DriverVersion" );
   _bstr_t video_arch_field( "VideoArchitecture" );
   _bstr_t vram_type_field( "VideoMemoryType" );
+  _bstr_t refresh_rate_field( "CurrentRefreshRate" );
+  _bstr_t hor_res_field( "CurrentHorizontalResolution" );
+  _bstr_t ver_res_field( "CurrentVerticalResolution" );
 
   auto res = wmi_default_query( table );
   auto en  = dwmi->get_single_result( res );
@@ -200,6 +203,12 @@ gpu_info load_gpu_info() {
       wmi_return_current_result<uint32_t>( en, video_arch_field ) );
   info.vram_type = vram_type_map.at(
       wmi_return_current_result<uint32_t>( en, vram_type_field ) );
+  info.refresh_rate =
+      wmi_return_current_result<uint32_t>( en, refresh_rate_field );
+  info.horizontal_resolution =
+      wmi_return_current_result<uint32_t>( en, hor_res_field );
+  info.vertical_resolution =
+      wmi_return_current_result<uint32_t>( en, ver_res_field );
 
   return info;
 }
@@ -245,6 +254,45 @@ std::vector<ram_stick_info> load_ram_info() {
 
     sresult = dwmi->get_single_result( res );
   }
+
+  return info;
+}
+
+os_info load_os_info() {
+  os_info info;
+
+  _bstr_t table( "Win32_OperatingSystem" );
+  _bstr_t name_field( "Name" );
+  _bstr_t sys_name_field( "CSName" );
+  _bstr_t version_field( "Version" );
+  _bstr_t country_code_field( "CountryCode" );
+  _bstr_t locale_field( "Locale" );
+  _bstr_t system_drive_field( "SystemDrive" );
+  _bstr_t windows_directory_field( "WindowsDirectory" );
+  _bstr_t boot_device_field( "BootDevice" );
+
+  auto res = wmi_default_query( table );
+  auto en  = dwmi->get_single_result( res );
+
+  info.name     = wmi_return_current_result<std::string, BSTR>( en, name_field,
+                                                                wstring_to_string );
+  info.sys_name = wmi_return_current_result<std::string, BSTR>(
+      en, sys_name_field, wstring_to_string );
+  info.version = wmi_return_current_result<std::string, BSTR>(
+      en, version_field, wstring_to_string );
+
+  info.country_code = wmi_return_current_result<std::string, BSTR>(
+      en, country_code_field, wstring_to_string );
+
+  info.locale = wmi_return_current_result<std::string, BSTR>(
+      en, locale_field, wstring_to_string );
+  info.system_drive = wmi_return_current_result<std::string, BSTR>(
+      en, system_drive_field, wstring_to_string );
+
+  info.windows_directory = wmi_return_current_result<std::string, BSTR>(
+      en, windows_directory_field, wstring_to_string );
+  info.boot_device = wmi_return_current_result<std::string, BSTR>(
+      en, boot_device_field, wstring_to_string );
 
   return info;
 }

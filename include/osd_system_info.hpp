@@ -1,6 +1,7 @@
 #ifndef OSD_CPU_INFO_HPP
 #define OSD_CPU_INFO_HPP
 
+#include "os_info.hpp"
 #include <cpu_info.hpp>
 #include <cstdint>
 #include <gpu_info.hpp>
@@ -24,6 +25,7 @@ std::string load_cpu_socket();
 cpu_info load_cpu_info();
 gpu_info load_gpu_info();
 std::vector<ram_stick_info> load_ram_info();
+os_info load_os_info();
 
 } // namespace sysmonitor
 

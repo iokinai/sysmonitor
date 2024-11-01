@@ -10,9 +10,9 @@ namespace po = boost::program_options;
 
 int main( int argc, char **argv ) {
   po::options_description desc( "Allowed options" );
-  desc.add_options()( "help,h", "Display help message" )( "cpu",
-                                                          "Display CPU info" )(
-      "gpu", "Display GPU info" )( "ram", "Display RAM info" );
+  desc.add_options()( "help,h", "Display help message" )(
+      "cpu", "Display CPU info" )( "gpu", "Display GPU info" )(
+      "ram", "Display RAM info" )( "os", "Display OS info" );
 
   if ( argc == 1 ) {
     std::cout << desc << std::endl;
@@ -43,6 +43,10 @@ int main( int argc, char **argv ) {
 
   if ( vm.count( "ram" ) ) {
     sysmonitor_cli::init_ram( sysmonitor::load_ram_info() );
+  }
+
+  if ( vm.count( "os" ) ) {
+    sysmonitor_cli::init_os( sysmonitor::load_os_info() );
   }
 
   sysmonitor_cli::print();
