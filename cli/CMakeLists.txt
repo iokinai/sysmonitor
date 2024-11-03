@@ -12,4 +12,4 @@ add_executable(sysmonitor-cli
 )
 
 target_include_directories(sysmonitor-cli PRIVATE ${Boost_INCLUDE_DIR})
-target_link_libraries(sysmonitor-cli PRIVATE ${Boost_LIBRARIES})
+target_link_libraries(sysmonitor-cli PRIVATE Boost::program_options)

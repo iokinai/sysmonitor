@@ -1,7 +1,9 @@
 #ifndef GPU_INFO_HPP
 #define GPU_INFO_HPP
 
+#include <cstdint>
 #include <string>
+
 
 namespace sysmonitor {
 

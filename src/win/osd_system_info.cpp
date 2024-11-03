@@ -1,4 +1,5 @@
 #include "cpu_info.hpp"
+#include "mingw/mgw_bstr_t.hpp"
 #include "win_wmi.hpp"
 #include <Windows.h>
 #include <combaseapi.h>
@@ -9,8 +10,10 @@
 #include <osd_system_info.hpp>
 #include <unordered_map>
 #include <wbemcli.h>
+#include <win_types_config.hpp>
 #include <winnt.h>
 #include <wtypes.h>
+
 
 #define dwmi     __wmi__singleton__detail__::wmi
 #define wmi_init __wmi__default__init__data__::__wmi__default__init__
@@ -24,7 +27,7 @@ static auto wmi = std::make_shared<__windows__details__::wmi>();
 namespace __wmi__default__init__data__ {
 
 struct __wmi__default__init__ {
-  _bstr_t lang, fquery;
+  bstr lang, fquery;
   long flags;
 };
 
@@ -69,11 +72,11 @@ static inline TI wmi_get_result( IWbemClassObject *obj, BSTR field ) {
 }
 
 static inline wmi_init default_init_data( BSTR table ) noexcept {
-  _bstr_t btable( table );
-  _bstr_t query( "SELECT * FROM " );
-  _bstr_t fquery = query + btable;
+  bstr btable( table );
+  bstr query( "SELECT * FROM " );
+  bstr fquery = query + btable;
 
-  _bstr_t lang( "WQL" );
+  bstr lang( "WQL" );
   long flags = WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY;
 
   return { lang, fquery, flags };
@@ -139,17 +142,17 @@ static const std::unordered_map<uint32_t, std::string> memory_type_map = {
 cpu_info load_cpu_info() {
   cpu_info info;
 
-  _bstr_t table( "Win32_Processor" );
-  _bstr_t arch_field( "Architecture" );
-  _bstr_t name_field( "Name" );
-  _bstr_t descr_field( "Description" );
-  _bstr_t l2size_field( "L2CacheSize" );
-  _bstr_t l3size_field( "L3CacheSize" );
-  _bstr_t load_perc_field( "LoadPercentage" );
-  _bstr_t max_speed_field( "MaxClockSpeed" );
-  _bstr_t number_of_cores( "NumberOfCores" );
-  _bstr_t thread_count( "ThreadCount" );
-  _bstr_t field( "SocketDesignation" );
+  bstr table( "Win32_Processor" );
+  bstr arch_field( "Architecture" );
+  bstr name_field( "Name" );
+  bstr descr_field( "Description" );
+  bstr l2size_field( "L2CacheSize" );
+  bstr l3size_field( "L3CacheSize" );
+  bstr load_perc_field( "LoadPercentage" );
+  bstr max_speed_field( "MaxClockSpeed" );
+  bstr number_of_cores( "NumberOfCores" );
+  bstr thread_count( "ThreadCount" );
+  bstr field( "SocketDesignation" );
 
   auto res = wmi_default_query( table );
   auto en  = dwmi->get_single_result( res );
@@ -178,15 +181,15 @@ cpu_info load_cpu_info() {
 gpu_info load_gpu_info() {
   gpu_info info;
 
-  _bstr_t table( "Win32_VideoController" );
-  _bstr_t name_field( "Name" );
-  _bstr_t description_field( "Description" );
-  _bstr_t driver_ver_field( "DriverVersion" );
-  _bstr_t video_arch_field( "VideoArchitecture" );
-  _bstr_t vram_type_field( "VideoMemoryType" );
-  _bstr_t refresh_rate_field( "CurrentRefreshRate" );
-  _bstr_t hor_res_field( "CurrentHorizontalResolution" );
-  _bstr_t ver_res_field( "CurrentVerticalResolution" );
+  bstr table( "Win32_VideoController" );
+  bstr name_field( "Name" );
+  bstr description_field( "Description" );
+  bstr driver_ver_field( "DriverVersion" );
+  bstr video_arch_field( "VideoArchitecture" );
+  bstr vram_type_field( "VideoMemoryType" );
+  bstr refresh_rate_field( "CurrentRefreshRate" );
+  bstr hor_res_field( "CurrentHorizontalResolution" );
+  bstr ver_res_field( "CurrentVerticalResolution" );
 
   auto res = wmi_default_query( table );
   auto en  = dwmi->get_single_result( res );
@@ -216,14 +219,14 @@ gpu_info load_gpu_info() {
 std::vector<ram_stick_info> load_ram_info() {
   std::vector<ram_stick_info> info;
 
-  _bstr_t table( "Win32_PhysicalMemory" );
-  _bstr_t name_field( "Name" );
-  _bstr_t model_field( "Model" );
-  _bstr_t version_field( "Version" );
-  _bstr_t capacity_field( "Capacity" );
-  _bstr_t speed_field( "Speed" );
-  _bstr_t description_field( "Description" );
-  _bstr_t memory_type_field( "MemoryType" );
+  bstr table( "Win32_PhysicalMemory" );
+  bstr name_field( "Name" );
+  bstr model_field( "Model" );
+  bstr version_field( "Version" );
+  bstr capacity_field( "Capacity" );
+  bstr speed_field( "Speed" );
+  bstr description_field( "Description" );
+  bstr memory_type_field( "MemoryType" );
 
   auto default_data = default_init_data( table );
   auto res          = wmi_send_query( default_data.lang, default_data.fquery,
@@ -261,15 +264,15 @@ std::vector<ram_stick_info> load_ram_info() {
 os_info load_os_info() {
   os_info info;
 
-  _bstr_t table( "Win32_OperatingSystem" );
-  _bstr_t name_field( "Name" );
-  _bstr_t sys_name_field( "CSName" );
-  _bstr_t version_field( "Version" );
-  _bstr_t country_code_field( "CountryCode" );
-  _bstr_t locale_field( "Locale" );
-  _bstr_t system_drive_field( "SystemDrive" );
-  _bstr_t windows_directory_field( "WindowsDirectory" );
-  _bstr_t boot_device_field( "BootDevice" );
+  bstr table( "Win32_OperatingSystem" );
+  bstr name_field( "Name" );
+  bstr sys_name_field( "CSName" );
+  bstr version_field( "Version" );
+  bstr country_code_field( "CountryCode" );
+  bstr locale_field( "Locale" );
+  bstr system_drive_field( "SystemDrive" );
+  bstr windows_directory_field( "WindowsDirectory" );
+  bstr boot_device_field( "BootDevice" );
 
   auto res = wmi_default_query( table );
   auto en  = dwmi->get_single_result( res );

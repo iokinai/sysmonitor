@@ -1,0 +1,7 @@
+#ifndef WIN_TYPES_CONFIG_HPP
+#define WIN_TYPES_CONFIG_HPP
+
+// clang-format off
+#cmakedefine bstr ${bstr}
+
+#endif
