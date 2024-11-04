@@ -1,11 +1,13 @@
 #include "win_wmi.hpp"
+#include <iostream>
 #include <stdexcept>
 
 namespace __windows__details__ {
 void wmi::init_com() {
   hr = CoInitializeEx( 0, COINIT_MULTITHREADED );
   if ( FAILED( hr ) ) {
-    throw std::runtime_error( "failed to initialize WMI" );
+    should_uninitialize_com = false;
+    // throw std::runtime_error( "failed to initialize WMI" );
   }
 }
 

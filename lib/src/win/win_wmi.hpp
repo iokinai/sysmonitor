@@ -13,6 +13,8 @@ namespace __windows__details__ {
 
 class wmi {
 
+  bool should_uninitialize_com = true;
+
   HRESULT hr;
   IWbemLocator *pLoc;
   IWbemServices *pSvc;
@@ -79,7 +81,9 @@ public:
     if ( pSvc )
       pSvc->Release();
 
-    CoUninitialize();
+    if ( should_uninitialize_com ) {
+      CoUninitialize();
+    }
   }
 
   inline ~wmi() {

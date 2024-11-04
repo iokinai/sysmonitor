@@ -42,11 +42,11 @@ public:
     return bstr_;
   }
 
-  constexpr inline size_t size() const noexcept {
+  inline size_t size() const noexcept {
     return SysStringLen( bstr_ );
   }
 
-  constexpr inline bool empty() const {
+  inline bool empty() const {
     return bstr_ == nullptr || SysStringLen( bstr_ ) == 0;
   }
 
