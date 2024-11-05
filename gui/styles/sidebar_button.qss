@@ -1,0 +1,13 @@
+QPushButton {
+    background-color: transparent;
+    outline: none;
+    border-radius: 5px;
+}
+
+QPushButton:hover, QPushButton:checked {
+    background-color: rgba(80, 80, 80, 80);
+}
+
+/* QPushButton:checked {
+    background-color: #ffffff10;
+} */

@@ -16,13 +16,20 @@ set(CXX_UI_FILES
     src/sidebarsetup.hpp
     src/pages/cpupage.hpp
     src/pages/cpupage.cpp
+    src/pages/pagelayout.hpp
+    src/pages/gpupage.hpp
+    src/pages/gpupage.cpp
+    src/pages/ospage.hpp
+    src/pages/ospage.cpp
+    src/pages/rampage.hpp
+    src/pages/rampage.cpp
 )
 
 set(QT_UI_FILES
     src/mainwindow.ui
 )
 
-find_package(Qt6 REQUIRED COMPONENTS Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Concurrent)
 
 qt_add_executable(sysmonitor-gui
     MANUAL_FINALIZATION
@@ -30,7 +37,10 @@ qt_add_executable(sysmonitor-gui
 
     ${CXX_UI_FILES}
     ${QT_UI_FILES}
+    resources.qrc
+
 )
+
 
 # set_target_properties(sysmonitor-gui PROPERTIES WIN32_EXECUTABLE TRUE)
 
@@ -44,6 +54,7 @@ set(QT_COPY_LIBS
     ${CMAKE_PREFIX_PATH}/bin/Qt6Widgets.dll
     ${CMAKE_PREFIX_PATH}/bin/Qt6Core.dll
     ${CMAKE_PREFIX_PATH}/bin/Qt6Gui.dll
+    ${CMAKE_PREFIX_PATH}/bin/Qt6Concurrent.dll
 )
 
 set(QT_PLUGINS_DIR ${CMAKE_PREFIX_PATH}/plugins)
@@ -58,6 +69,8 @@ add_custom_command(TARGET sysmonitor-gui POST_BUILD
 
 )
 
-target_link_libraries(sysmonitor-gui PRIVATE Qt6::Widgets)
+set_target_properties(sysmonitor-gui PROPERTIES WIN32_EXECUTABLE ON)
+
+target_link_libraries(sysmonitor-gui PRIVATE Qt6::Widgets Qt6::Concurrent)
 
 qt_finalize_executable(sysmonitor-gui)

@@ -45,12 +45,6 @@ float_converter( uint64_t base_value, uint8_t accuracy,
   return str_result;
 }
 
-inline std::string ram_converter_into_gb( const std::string &ram ) {
-  uint64_t v = std::stoull( ram.c_str() );
-
-  return std::to_string( v );
-}
-
 inline std::string bytes_converter( uint64_t base_value,
                                     uint8_t accuracy ) noexcept {
 
@@ -61,6 +55,12 @@ inline std::string bytes_converter( uint64_t base_value,
   };
 
   return float_converter( base_value, accuracy, units );
+}
+
+inline std::string ram_converter_into_gb( const std::string &ram ) {
+  uint64_t v = std::stoull( ram.c_str() );
+
+  return bytes_converter( v, 2 );
 }
 
 inline std::string hertz_converter( uint32_t base_value,

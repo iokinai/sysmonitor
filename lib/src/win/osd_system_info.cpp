@@ -14,7 +14,6 @@
 #include <winnt.h>
 #include <wtypes.h>
 
-
 #define dwmi     __wmi__singleton__detail__::wmi
 #define wmi_init __wmi__default__init__data__::__wmi__default__init__
 

@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>icons/cpu.png</file>
+        <file>icons/cpu_white.png</file>
+        <file>icons/gpu.png</file>
+        <file>icons/gpu_white.png</file>
+        <file>icons/memory.png</file>
+        <file>icons/memory_white.png</file>
+        <file>icons/os.png</file>
+        <file>icons/os_white.png</file>
+    </qresource>
+    <qresource prefix="/styles">
+        <file>styles/sidebar_button.qss</file>
+        <file>styles/window.qss</file>
+        <file>styles/pages.qss</file>
+    </qresource>
+</RCC>
